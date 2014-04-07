@@ -3,6 +3,7 @@ var send = require("../lib/send_payment");
 var nconf = require("../config/nconf");
 var build_payment = require('../lib/build_payment');
 var gateway = require('../lib/gateway');
+var pollPaymentStatus = require('../lib/poll_payment_status.js');
 
 process.env.DATABASE_URL = nconf.get('DATABASE_URL');
 
@@ -33,13 +34,23 @@ function workJob() {
               }
             }
             send(payment, function(err, payment){
-
+                console.log('ERROR', err);
               if (err) { setTimeout(workJob, 1000); return }
 
               if (payment.success) {
+                  console.log(payment);
                 transaction.transaction_state = 'sent';
+
                 transaction.save().complete(function(){
-                  setTimeout(workJob, 1000);
+                    pollPaymentStatus(payment['client_resource_id'], function(err, payment){
+                        if(err){
+                            return;
+                        } else {
+                            transaction.transaction_hash = payment.hash;
+                            transaction.save();
+                            setTimeout(workJob, 1000);
+                        }
+                    });
                 });
               } else {
                 setTimeout(workJob, 1000);
