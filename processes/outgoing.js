@@ -4,8 +4,7 @@ var nconf = require("../config/nconf");
 var build_payment = require('../lib/build_payment');
 var gateway = require('../lib/gateway');
 var pollPaymentStatus = require('../lib/poll_payment_status.js');
-var mailer = require('../lib/mailer.js');
-var conf = require('../config/inbound.js');
+var Mailer = require('../lib/mailer.js');
 
 process.env.DATABASE_URL = nconf.get('DATABASE_URL');
 
@@ -50,8 +49,8 @@ function workJob() {
                         } else {
                             transaction.transaction_hash = payment.hash;
                             transaction.save();
-                            
-                            mailer({
+
+                            Mailer.sendEmail({
                                 to: conf.get('XRP_SENT_NOTIFY'),
                                 subject: '[INFO] ' + payment.source_amount.value + ' XRP sent',
                                 body: payment.source_amount.value + ' XRP sent to Bitcoin Japan'
