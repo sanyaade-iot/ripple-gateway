@@ -30,21 +30,20 @@ var Utils = {
     }
 }
 
-queue.once('deposit', function (deposit) {
+queue.on('deposit', function (deposit) {
 
     getExchangeRate(function(err, exchangeRate){
         if(err){
-            console.log('ERROR', err);
+            console.log(err);
         } else {
             sql.transaction(function (t) {
-
                 abstract.getExternalAccountRippleAddress(deposit.external_account_id, function (err, address) {
                     if (err) {
 
                         t.rollback();
                         return;
                     }
-                    console.log('EXCHANGE RATE', exchangeRate);
+
                     var toDeposit = Utils.convert(deposit.amount, exchangeRate[0]['last'], 'XRP');
 
                     console.log('conversion', toDeposit);
@@ -52,9 +51,14 @@ queue.once('deposit', function (deposit) {
                     var opts = {
                         to_address_id: address.id,
                         amount: toDeposit.amount,
-                        to_currency: toDeposit.currency
+                        to_currency: toDeposit.currency,
+                        currency: toDeposit.currency,
+                        user_id: 3
+
                     };
+
                     console.log(opts);
+
                     gateway.payments.enqueueOutgoing(opts, function (err, payment) {
                         if (err) {
                             console.log(err);
@@ -62,7 +66,7 @@ queue.once('deposit', function (deposit) {
                             return;
                         }
 
-                        console.log('PAYMENT', payment);
+                        console.log('PAYMENT', payment.to_amount, payment.to_currency, payment.to_issuer);
 
                         if (payment) {
                             var opts = {
