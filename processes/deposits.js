@@ -3,15 +3,12 @@
 var queue = require('../lib/deposit_queue.js');
 
 var config = require('../config/nconf.js');
-var exchangeConfig = require('../config/inbound.js');
 var abstract = require('../lib/abstract.js');
 var api = require("ripple-gateway-data-sequelize-adapter");
 var sql = require('../node_modules/ripple-gateway-data-sequelize-adapter/lib/sequelize.js');
 var gateway = require('../lib/gateway.js');
-var getExchangeRate = require('../lib/get_exchange_rate.js');
-
-
-var discountBy = exchangeConfig.get('DISCOUNT_PERCENTAGE') / 100;
+var ExchangeRate = require('../lib/get_exchange_rate.js');
+var discountBy = config.get('DISCOUNT_PERCENTAGE') / 100;
 
 var btc_units = 100000000;
 
@@ -32,7 +29,7 @@ var Utils = {
 
 queue.on('deposit', function (deposit) {
 
-    getExchangeRate(function(err, exchangeRate){
+    ExchangeRate.getRate(function(err, exchangeRate){
         if(err){
             console.log(err);
         } else {
