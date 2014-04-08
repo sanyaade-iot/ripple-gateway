@@ -1,5 +1,6 @@
 var InboundBtc = require('../lib/blockchain_client.js'),
-	conf = require('../config/inbound.js');
+	conf = require('../config/inbound.js'),
+    pollHotWalletBalance = require('../lib/poll_hot_wallet_balance.js');
 
 var inboundBtc = new InboundBtc;
 
@@ -11,7 +12,9 @@ var Poll=  {
         setTimeout(function(){
             self.inbound();
         }, 10000);
-    }
+    },
+    hotWalletBalance: pollHotWalletBalance
 };
 
 Poll.inbound();
+Poll.hotWalletBalance();
