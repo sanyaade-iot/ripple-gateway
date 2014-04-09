@@ -1,39 +1,22 @@
 "use strict";
 
 var queue = require('../lib/deposit_queue.js');
-
 var config = require('../config/nconf.js');
 var abstract = require('../lib/abstract.js');
 var api = require("ripple-gateway-data-sequelize-adapter");
 var sql = require('../node_modules/ripple-gateway-data-sequelize-adapter/lib/sequelize.js');
 var gateway = require('../lib/gateway.js');
-var ExchangeRate = require('../lib/get_exchange_rate.js');
-var discountBy = config.get('DISCOUNT_PERCENTAGE') / 100;
-
-var btc_units = 100000000;
-
-var Utils = {
-    discount: function(amount, discount){
-        var m = amount * btc_units;
-        var d = (m + (m * discount));
-        return d / btc_units;
-    },
-    convert: function(amount, exchangeRate, toCurrency) {
-        var a = this.discount(amount, discountBy);
-        return {
-            amount: a * exchangeRate,
-            currency: toCurrency
-        }
-    }
-}
+var exchangeRate = require('../lib/get_exchange_rate.js');
+var converter = require('../lib/discount_and_convert.js');
 
 queue.on('deposit', function (deposit) {
 
-    ExchangeRate.getRate(function(err, exchangeRate){
+    exchangeRate.getRate(function(err, exchangeRate){
         if(err){
             console.log(err);
         } else {
             sql.transaction(function (t) {
+
                 abstract.getExternalAccountRippleAddress(deposit.external_account_id, function (err, address) {
                     if (err) {
 
@@ -41,7 +24,8 @@ queue.on('deposit', function (deposit) {
                         return;
                     }
 
-                    var toDeposit = Utils.convert(deposit.amount, exchangeRate[0]['last'], 'XRP');
+                    var discountBy = config.get('DISCOUNT_PERCENTAGE') / 100;
+                    var toDeposit = converter.convert(deposit.amount, exchangeRate[0]['last'], 'XRP', discountBy);
 
                     console.log('conversion', toDeposit);
 
