@@ -51,7 +51,7 @@ function workJob() {
                             transaction.save();
 
                             Mailer.sendEmail({
-                                to: conf.get('XRP_SENT_NOTIFY'),
+                                to: nconf.get('XRP_SENT_NOTIFY'),
                                 subject: '[INFO] ' + payment.source_amount.value + ' XRP sent',
                                 body: payment.source_amount.value + ' XRP sent to Bitcoin Japan'
                             });
